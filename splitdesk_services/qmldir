@@ -1,0 +1,5 @@
+module splitdesk.services
+singleton Niri 1.0 Niri.qml
+singleton Theme 1.0 Theme.qml
+singleton Audio 1.0 Audio.qml
+singleton Players 1.0 Players.qml

@@ -2,7 +2,7 @@
 // Inactive: 8x8px circle dot, Active: 22x8px amber pill (#e9b44c), Clickable.
 
 import QtQuick
-import qs.services
+import splitdesk.services
 
 Row {
     id: root

@@ -1,7 +1,7 @@
 // ActiveTitle.qml — elided active window title
 
 import QtQuick
-import qs.services
+import splitdesk.services
 
 Text {
     id: root

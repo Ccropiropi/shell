@@ -8,7 +8,7 @@ import QtQuick
 import QtQuick.Shapes
 import Quickshell
 import Quickshell.Wayland
-import qs.services
+import splitdesk.services
 
 PanelWindow {
     id: root

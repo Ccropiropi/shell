@@ -4,7 +4,7 @@
 
 import QtQuick
 import QtQuick.Shapes
-import qs.services
+import splitdesk.services
 
 Item {
     id: root
