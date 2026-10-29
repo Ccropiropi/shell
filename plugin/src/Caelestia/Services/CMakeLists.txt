@@ -1,3 +1,13 @@
+option(BUILD_HYPRLAND "Build Hyprland C++ plugin services" OFF)
+
+set(HYPR_SOURCES)
+if(BUILD_HYPRLAND)
+    list(APPEND HYPR_SOURCES
+        hyprdevices.cpp
+        hyprextras.cpp
+    )
+endif()
+
 qml_module(caelestia-services
     URI Caelestia.Services
     SOURCES
@@ -18,8 +28,7 @@ qml_module(caelestia-services
         lyrics.cpp
         sessionmanager.cpp
         networkusage.cpp
-        hyprdevices.cpp
-        hyprextras.cpp
+        ${HYPR_SOURCES}
     LIBRARIES
         Qt::Concurrent
         Qt::DBus

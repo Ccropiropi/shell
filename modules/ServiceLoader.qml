@@ -14,6 +14,9 @@ Scope {
         Brightness;
         Weather.reload();
 
+        // Splitdesk: eagerly start Niri IPC telemetry stream
+        Niri;
+
         if (GlobalConfig.utilities.vpn.enabled)
             VPN;
     }
