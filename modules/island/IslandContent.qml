@@ -3,7 +3,7 @@
 
 import QtQuick
 import QtQuick.Layouts
-import splitdesk.services
+import "../../splitdesk_services"
 
 RowLayout {
     id: root

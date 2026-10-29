@@ -7,7 +7,7 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Wayland
-import splitdesk.services
+import "../../splitdesk_services"
 import "widgets"
 
 PanelWindow {

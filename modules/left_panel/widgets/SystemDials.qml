@@ -3,7 +3,7 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell.Io
-import splitdesk.services
+import "../../../splitdesk_services"
 
 Rectangle {
     id: root
@@ -95,7 +95,7 @@ Rectangle {
             text: "SYSTEM DIALS"
             font.pixelSize: 11
             font.weight: Font.DemiBold
-            letterSpacing: 1.0
+            font.letterSpacing: 1.0
             color: Theme.dim
         }
 

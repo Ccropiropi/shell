@@ -4,7 +4,7 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell.Services.Mpris
-import splitdesk.services
+import "../../splitdesk_services"
 
 Item {
     id: root
