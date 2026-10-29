@@ -34,6 +34,7 @@ ShellRoot {
     LeftPanel {}
     FocusVeils {}
     Background {}
+    WallpaperSurface {}
     Drawers {}
     AreaPicker {}
     Lock {

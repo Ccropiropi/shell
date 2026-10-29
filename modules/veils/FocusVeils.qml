@@ -24,10 +24,11 @@ PanelWindow {
     anchors.top: true
     anchors.bottom: true
 
-    WlrLayershell.layer: WlrLayer.Bottom
+    WlrLayershell.layer: WlrLayer.Top
     WlrLayershell.namespace: "splitdesk-focus-veils"
     WlrLayershell.exclusionMode: ExclusionMode.Ignore
 
+    // Empty region ensures 100% mouse and keyboard pass-through
     mask: Region {}
 
     Shape {

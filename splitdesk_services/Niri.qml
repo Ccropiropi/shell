@@ -1,3 +1,4 @@
+// splitdesk_services/Niri.qml — Native IPC Telemetry Service
 pragma Singleton
 
 import QtQuick
@@ -6,6 +7,9 @@ import Quickshell.Io
 
 Singleton {
     id: root
+
+    readonly property string socketPath: Quickshell.env("NIRI_SOCKET")
+    readonly property bool isSocketAvailable: socketPath !== ""
 
     // Reactive public state
     property bool connected: false
@@ -18,38 +22,79 @@ Singleton {
 
     readonly property string activeWindowTitle: activeWindow ? (activeWindow.title || "") : ""
 
-    // ── Action dispatch ──────────────────────────────────────────────────────
+    // ── Reconnection Lifecycle (Exponential Backoff with Jitter) ─────────────
+    property int reconnectAttempt: 0
+    property int reconnectBaseMs: 500
+    property int reconnectMaxMs: 10000
 
-    function dispatch(args) {
-        if (actionProc.running)
-            actionProc.running = false;
-        actionProc.command = ["niri", "msg", "action"].concat(args);
-        actionProc.running = true;
+    function scheduleReconnect() {
+        if (!root.isSocketAvailable) return;
+        const pow = Math.min(reconnectAttempt, 6);
+        const base = Math.min(reconnectBaseMs * Math.pow(2, pow), reconnectMaxMs);
+        const jitter = Math.floor(Math.random() * Math.floor(base / 4));
+        reconnectTimer.interval = base + jitter;
+        reconnectTimer.restart();
+        reconnectAttempt++;
     }
 
-    function toggleSplitMode() { dispatch(["toggle-split-mode"]); }
-    function focusRegionLeft() { dispatch(["focus-region-left"]); }
-    function focusRegionRight() { dispatch(["focus-region-right"]); }
-    function toggleRegionFocus() { dispatch(["toggle-region-focus"]); }
-    function moveWindowToRegionLeft() { dispatch(["move-window-to-region-left"]); }
-    function moveWindowToRegionRight() { dispatch(["move-window-to-region-right"]); }
-    function focusWorkspace(id) { dispatch(["focus-workspace", String(id)]); }
+    function actionToCliArgs(actionObj) {
+        if (typeof actionObj === "string") {
+            const kebab = actionObj.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();
+            return [kebab];
+        }
+        if (typeof actionObj === "object" && actionObj !== null) {
+            if (actionObj.FocusWorkspace && actionObj.FocusWorkspace.reference) {
+                const ref = actionObj.FocusWorkspace.reference;
+                const id = ref.Id ?? ref.id;
+                if (id !== undefined) return ["focus-workspace", String(id)];
+            }
+        }
+        console.warn("[Niri.qml] Could not convert action to CLI args:", JSON.stringify(actionObj));
+        return [];
+    }
+
+    function sendAction(actionObj) {
+        if (requestSocket.connected) {
+            const payload = JSON.stringify({ "Action": actionObj }) + "\n";
+            requestSocket.write(payload);
+            requestSocket.flush();
+            return true;
+        }
+        // Fallback: spawn CLI process if socket is detached
+        const args = actionToCliArgs(actionObj);
+        if (args.length > 0) {
+            if (fallbackActionProc.running) fallbackActionProc.running = false;
+            fallbackActionProc.command = ["niri", "msg", "action"].concat(args);
+            fallbackActionProc.running = true;
+        }
+        return false;
+    }
+
+    function toggleSplitMode() { sendAction("ToggleSplitMode"); }
+
+    function focusRegionLeft() { sendAction("FocusRegionLeft"); }
+
+    function focusRegionRight() { sendAction("FocusRegionRight"); }
+
+    function toggleRegionFocus() { sendAction("ToggleRegionFocus"); }
+
+    function moveWindowToRegionLeft() { sendAction("MoveWindowToRegionLeft"); }
+
+    function moveWindowToRegionRight() { sendAction("MoveWindowToRegionRight"); }
+
+    function focusWorkspace(id) {
+        sendAction({ "FocusWorkspace": { "reference": { "Id": Number(id) } } });
+    }
 
     function focusRegion(region) {
-        if (String(region).toLowerCase() === "left")
-            focusRegionLeft();
-        else if (String(region).toLowerCase() === "right")
-            focusRegionRight();
+        if (String(region).toLowerCase() === "left") focusRegionLeft();
+        else if (String(region).toLowerCase() === "right") focusRegionRight();
     }
 
     function moveWindowToRegion(region) {
-        if (String(region).toLowerCase() === "left")
-            moveWindowToRegionLeft();
-        else if (String(region).toLowerCase() === "right")
-            moveWindowToRegionRight();
+        if (String(region).toLowerCase() === "left") moveWindowToRegionLeft();
+        else if (String(region).toLowerCase() === "right") moveWindowToRegionRight();
     }
-
-    // ── Event ingestion ──────────────────────────────────────────────────────
 
     function handleEvent(evt) {
         if (!evt) return;
@@ -86,19 +131,16 @@ Singleton {
             let focusedWin = null;
             for (let i = 0; i < wins.length; ++i) {
                 copy[wins[i].id] = wins[i];
-                if (wins[i].is_focused)
-                    focusedWin = wins[i];
+                if (wins[i].is_focused) focusedWin = wins[i];
             }
             root.windowsById = copy;
-            if (focusedWin)
-                root.activeWindow = focusedWin;
+            if (focusedWin) root.activeWindow = focusedWin;
         } else if (evt.WindowOpenedOrChanged) {
             const win = evt.WindowOpenedOrChanged.window;
             const copy = Object.assign({}, root.windowsById);
             copy[win.id] = win;
             root.windowsById = copy;
-            if (win.is_focused)
-                root.activeWindow = win;
+            if (win.is_focused) root.activeWindow = win;
         } else if (evt.WindowClosed) {
             const id = evt.WindowClosed.id;
             const copy = Object.assign({}, root.windowsById);
@@ -108,34 +150,57 @@ Singleton {
                 root.activeWindow = null;
         } else if (evt.WindowFocusChanged) {
             const id = evt.WindowFocusChanged.id;
-            if (id === null || id === undefined)
-                root.activeWindow = null;
-            else if (root.windowsById[id])
-                root.activeWindow = root.windowsById[id];
+            if (id === null || id === undefined) root.activeWindow = null;
+            else if (root.windowsById[id]) root.activeWindow = root.windowsById[id];
         } else if (evt.WorkspaceActiveWindowChanged) {
             const id = evt.WorkspaceActiveWindowChanged.active_window_id;
             if (evt.WorkspaceActiveWindowChanged.workspace_id === root.focusedWorkspaceId) {
-                if (id === null || id === undefined)
-                    root.activeWindow = null;
-                else if (root.windowsById[id])
-                    root.activeWindow = root.windowsById[id];
+                if (id === null || id === undefined) root.activeWindow = null;
+                else if (root.windowsById[id]) root.activeWindow = root.windowsById[id];
             }
         }
     }
 
-    function _handleEvent(evt) {
-        handleEvent(evt);
+    Timer {
+        id: reconnectTimer
+
+        repeat: false
+        onTriggered: {
+            if (root.isSocketAvailable) {
+                if (!eventStreamSocket.connected) {
+                    eventStreamSocket.connected = false;
+                    Qt.callLater(() => { eventStreamSocket.connected = true; });
+                }
+                if (!requestSocket.connected) {
+                    requestSocket.connected = false;
+                    Qt.callLater(() => { requestSocket.connected = true; });
+                }
+            }
+        }
     }
 
-    // ── Inbound event stream ─────────────────────────────────────────────────
+    Socket {
+        id: eventStreamSocket
 
-    Process {
-        id: eventStreamProc
+        path: root.socketPath
+        connected: root.isSocketAvailable
 
-        command: ["niri", "msg", "--json", "event-stream"]
-        running: true
+        onConnectionStateChanged: {
+            root.connected = connected;
+            if (connected) {
+                root.reconnectAttempt = 0;
+                write('"EventStream"\n');
+                flush();
+            } else {
+                // Clear stale cache on disconnect
+                root.workspaces = [];
+                root.windowsById = ({});
+                root.activeWindow = null;
+                root.scheduleReconnect();
+            }
+        }
 
-        stdout: SplitParser {
+        parser: SplitParser {
             splitMarker: "\n"
             onRead: data => {
                 const line = data.trim();
@@ -143,42 +208,41 @@ Singleton {
                 try {
                     const evt = JSON.parse(line);
                     root.handleEvent(evt);
-                    root.connected = true;
                 } catch (err) {
-                    console.warn("[Niri.qml] JSON parse error:", err, "raw line:", line);
+                    console.warn("[Niri.qml] Socket JSON parse error:", err);
                 }
             }
         }
+    }
 
-        onExited: (code, status) => {
-            root.connected = false;
-            console.warn(`[Niri.qml] Event stream exited (code ${code}). Reconnecting in 1000ms...`);
-            reconnectTimer.start();
+    Socket {
+        id: requestSocket
+
+        path: root.socketPath
+        connected: root.isSocketAvailable
+
+        onConnectionStateChanged: {
+            if (!connected && root.isSocketAvailable) {
+                root.scheduleReconnect();
+            }
+        }
+
+        // Drain Niri JSON replies ({"Ok":"Handled"}\n) to prevent buffer exhaustion
+        parser: SplitParser {
+            splitMarker: "\n"
+            onRead: data => {
+                // Drained successfully from kernel SO_RCVBUF
+            }
         }
     }
 
-    // ── One-shot action invoker ──────────────────────────────────────────────
-
     Process {
-        id: actionProc
+        id: fallbackActionProc
 
         running: false
         onExited: (code, status) => {
             if (code !== 0)
-                console.warn("[Niri.qml] Action dispatch failed, exit code:", code);
-        }
-    }
-
-    // ── Fault-tolerant reconnect ─────────────────────────────────────────────
-
-    Timer {
-        id: reconnectTimer
-
-        interval: 1000
-        repeat: false
-        onTriggered: {
-            if (!eventStreamProc.running)
-                eventStreamProc.running = true;
+                console.warn("[Niri.qml] Fallback action failed, exit code:", code);
         }
     }
 }

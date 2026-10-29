@@ -44,7 +44,7 @@ console.log("PASS: FocusVeils mounted into shell.qml.");
 // ── 3. FocusVeils Component & Pass-Through Verification ─────────────────────
 const focusVeilsSrc = fs.readFileSync(path.join(veilsDir, "FocusVeils.qml"), "utf8");
 assert(focusVeilsSrc.includes("PanelWindow"), "FocusVeils must be a PanelWindow");
-assert(focusVeilsSrc.includes("WlrLayershell.layer: WlrLayer.Bottom"), "FocusVeils must reside on WlrLayer.Bottom");
+assert(focusVeilsSrc.includes("WlrLayershell.layer: WlrLayer.Top"), "FocusVeils must reside on WlrLayer.Top");
 assert(focusVeilsSrc.includes('WlrLayershell.namespace: "splitdesk-focus-veils"'), "Namespace must be splitdesk-focus-veils");
 assert(focusVeilsSrc.includes("WlrLayershell.exclusionMode: ExclusionMode.Ignore"), "ExclusionMode must be Ignore");
 assert(focusVeilsSrc.includes("anchors.left: true"), "Must anchor to screen left");
@@ -55,7 +55,7 @@ assert(focusVeilsSrc.includes("visible: Niri.regionsEnabled"), "Visible only whe
 
 // 100% mouse pass-through: empty mask Region {}
 assert(/mask:\s*Region\s*\{\s*\}/.test(focusVeilsSrc), "Must specify mask: Region {} for 100% mouse pass-through");
-console.log("PASS: FocusVeils PanelWindow, WlrLayer.Bottom, edge anchors, and mask: Region {} pass-through verified.");
+console.log("PASS: FocusVeils PanelWindow, WlrLayer.Top, edge anchors, and mask: Region {} pass-through verified.");
 
 // Dual veil shapes & 350ms cross-fades
 assert(focusVeilsSrc.includes("id: veilLeft"), "Must declare veilLeft shape");
