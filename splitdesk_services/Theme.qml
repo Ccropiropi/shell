@@ -28,4 +28,9 @@ Singleton {
     readonly property int radiusWindow:   28
     readonly property int radiusIsland:   26
     readonly property int radiusTile:     22
+
+    // ── OSD/Session/Utilities flags ──────────────────────────────────────────
+    readonly property bool enabled: true
+    readonly property bool utilitiesEnabled: true
+    readonly property int osdHideDelay: 1500
 }
