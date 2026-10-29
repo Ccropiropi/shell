@@ -2,8 +2,7 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import QtQuick.Layouts
-import Caelestia
-import Caelestia.Config
+import "splitdesk_services"
 import qs.components
 import qs.components.controls
 import qs.services
@@ -21,15 +20,15 @@ Item {
     required property bool sourceMuted
     required property real brightness
 
-    implicitWidth: layout.implicitWidth + Tokens.padding.large + layout.anchors.horizontalCenterOffset * 2
-    implicitHeight: layout.implicitHeight + Tokens.padding.large * 2
+    implicitWidth: layout.implicitWidth + Theme.paddingLarge + layout.anchors.horizontalCenterOffset * 2
+    implicitHeight: layout.implicitHeight + Theme.paddingLarge * 2
 
     ColumnLayout {
         id: layout
 
         anchors.centerIn: parent
-        anchors.horizontalCenterOffset: CUtils.clamp(Tokens.padding.large - Config.border.thickness, 0, Tokens.padding.large) / 2
-        spacing: Tokens.spacing.medium
+        anchors.horizontalCenterOffset: Math.max(Theme.paddingLarge - Theme.borderThickness, 0) / 2
+        spacing: Theme.spacingMedium
 
         // Speaker volume
         CustomMouseArea {
@@ -40,22 +39,22 @@ Item {
                     Audio.decrementVolume();
             }
 
-            implicitWidth: Tokens.sizes.osd.sliderWidth
-            implicitHeight: Tokens.sizes.osd.sliderHeight
+            implicitWidth: Theme.osdSliderWidth
+            implicitHeight: Theme.osdSliderHeight
 
             FilledSlider {
                 anchors.fill: parent
 
                 icon: Icons.getVolumeIcon(value, root.muted)
                 value: root.volume
-                to: GlobalConfig.services.maxVolume
+                to: Theme.maxVolume
                 onMoved: Audio.setVolume(value)
             }
         }
 
         // Microphone volume
         WrappedLoader {
-            shouldBeActive: Config.osd.enableMicrophone && (!Config.osd.enableBrightness || !root.screenState.session)
+            shouldBeActive: Theme.osdEnableMicrophone && (!Theme.osdEnableBrightness || !root.screenState.session)
 
             sourceComponent: CustomMouseArea {
                 function onWheel(event: WheelEvent) {
@@ -65,15 +64,15 @@ Item {
                         Audio.decrementSourceVolume();
                 }
 
-                implicitWidth: Tokens.sizes.osd.sliderWidth
-                implicitHeight: Tokens.sizes.osd.sliderHeight
+                implicitWidth: Theme.osdSliderWidth
+                implicitHeight: Theme.osdSliderHeight
 
                 FilledSlider {
                     anchors.fill: parent
 
                     icon: Icons.getMicVolumeIcon(value, root.sourceMuted)
                     value: root.sourceVolume
-                    to: GlobalConfig.services.maxVolume
+                    to: Theme.maxVolume
                     onMoved: Audio.setSourceVolume(value)
                 }
             }
@@ -81,7 +80,7 @@ Item {
 
         // Brightness
         WrappedLoader {
-            shouldBeActive: Config.osd.enableBrightness
+            shouldBeActive: Theme.osdEnableBrightness
 
             sourceComponent: CustomMouseArea {
                 function onWheel(event: WheelEvent) {
@@ -89,13 +88,13 @@ Item {
                     if (!monitor)
                         return;
                     if (event.angleDelta.y > 0)
-                        monitor.setBrightness(monitor.brightness + GlobalConfig.services.brightnessIncrement);
+                        monitor.setBrightness(monitor.brightness + Theme.brightnessIncrement);
                     else if (event.angleDelta.y < 0)
-                        monitor.setBrightness(monitor.brightness - GlobalConfig.services.brightnessIncrement);
+                        monitor.setBrightness(monitor.brightness - Theme.brightnessIncrement);
                 }
 
-                implicitWidth: Tokens.sizes.osd.sliderWidth
-                implicitHeight: Tokens.sizes.osd.sliderHeight
+                implicitWidth: Theme.osdSliderWidth
+                implicitHeight: Theme.osdSliderHeight
 
                 FilledSlider {
                     anchors.fill: parent
@@ -112,7 +111,7 @@ Item {
         required property bool shouldBeActive
 
         asynchronous: true
-        Layout.preferredHeight: shouldBeActive ? Tokens.sizes.osd.sliderHeight : 0
+        Layout.preferredHeight: shouldBeActive ? Theme.osdSliderHeight : 0
         opacity: shouldBeActive ? 1 : 0
         active: opacity > 0
         visible: active

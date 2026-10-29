@@ -29,8 +29,19 @@ Singleton {
     readonly property int radiusIsland:   26
     readonly property int radiusTile:     22
 
+    // ── Border/spacing tokens ────────────────────────────────────────────────
+    readonly property int borderThickness: 2
+    readonly property int paddingLarge: 16
+    readonly property int spacingMedium: 12
+
     // ── OSD/Session/Utilities flags ──────────────────────────────────────────
     readonly property bool enabled: true
     readonly property bool utilitiesEnabled: true
     readonly property int osdHideDelay: 1500
+    readonly property bool osdEnableMicrophone: true
+    readonly property bool osdEnableBrightness: true
+    readonly property int osdSliderWidth: 240
+    readonly property int osdSliderHeight: 36
+    readonly property real maxVolume: 1.5
+    readonly property real brightnessIncrement: 0.05
 }
