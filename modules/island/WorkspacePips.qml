@@ -1,5 +1,5 @@
-// WorkspacePips.qml — workspace indicator row
-// Each inactive pip: 8×8px circle; active: 22×8px amber pill.
+// WorkspacePips.qml — reactive workspace indicator pips for splitdesk
+// Inactive: 8x8px circle dot, Active: 22x8px amber pill (#e9b44c), Clickable.
 
 import QtQuick
 import qs.services
@@ -7,31 +7,42 @@ import qs.services
 Row {
     id: root
 
-    spacing: 5
+    readonly property var workspaceList: (Niri.workspaces && Niri.workspaces.length > 0)
+        ? Niri.workspaces
+        : [{ id: 1, is_focused: true }]
+
+    spacing: 6
 
     Repeater {
-        model: Niri.workspaces
+        model: root.workspaceList
 
         Rectangle {
-            required property var modelData
-            readonly property bool active: modelData.id === Niri.focusedWorkspaceId
+            id: pip
 
+            required property var modelData
+
+            readonly property bool isCurrent: (modelData.id !== undefined && modelData.id === Niri.focusedWorkspaceId)
+                || (Niri.focusedWorkspaceId === -1 && Boolean(modelData.is_focused))
+
+            width: isCurrent ? 22 : 8
             height: 8
-            width: active ? 22 : 8
             radius: 4
-            color: active ? Theme.amber : Qt.rgba(1, 1, 1, 0.35)
+            color: isCurrent ? Theme.amber : Qt.rgba(1, 1, 1, 0.35)
 
             Behavior on width {
-                NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
+                NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
             }
             Behavior on color {
-                ColorAnimation { duration: 200 }
+                ColorAnimation { duration: 220 }
             }
 
             MouseArea {
                 anchors.fill: parent
-                onClicked: Niri.focusWorkspace(modelData.id)
                 cursorShape: Qt.PointingHandCursor
+                onClicked: {
+                    if (modelData && modelData.id !== undefined)
+                        Niri.focusWorkspace(modelData.id);
+                }
             }
         }
     }
