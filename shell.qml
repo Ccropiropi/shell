@@ -10,6 +10,7 @@ import "modules/background"
 import "modules/areapicker"
 import "modules/lock"
 import "modules/island"
+import "modules/left_panel"
 import QtQuick
 import Quickshell
 import qs.services
@@ -29,6 +30,7 @@ ShellRoot {
     ServiceLoader {}
 
     IslandBar {}
+    LeftPanel {}
     Background {}
     Drawers {}
     AreaPicker {}
