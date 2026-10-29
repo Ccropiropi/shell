@@ -1,113 +1,374 @@
-pragma ComponentBehavior: Bound
-
 import QtQuick
-import Caelestia.Blobs
-import Caelestia.Config
-import qs.components
-import qs.components.controls
-import qs.services
-import qs.modules.nexus
+import QtQuick.Controls
+import QtQuick.Layouts
+import Quickshell
+import Quickshell.Io
+import Quickshell.Wayland
+import "../../splitdesk_services"
 
-Item {
+PanelWindow {
     id: root
 
-    readonly property NexusState nState: NexusState {
-        id: nState
+    property bool isOpen: false
+    visible: isOpen
 
-        onClose: root.close()
-    }
-    property color blobColour: Colours.tPalette.m3surfaceContainerLow
+    WlrLayershell.layer: WlrLayer.Top
+    WlrLayershell.keyboardFocus: isOpen ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
+    WlrLayershell.namespace: "splitdesk-nexus"
 
-    signal close
+    anchors.top: true
+    anchors.bottom: true
+    anchors.left: true
+    anchors.right: true
+    color: "transparent"
 
-    implicitWidth: Math.round(implicitHeight * Tokens.sizes.nexus.ratio)
-    implicitHeight: Math.round(nState.screen.height * Tokens.sizes.nexus.heightMult)
-
-    Behavior on blobColour {
-        CAnim {}
-    }
-
-    TapHandler {
-        onTapped: root.focus = true
+    function toggle() {
+        isOpen = !isOpen;
     }
 
-    BlobGroup {
-        id: blobGroup
-
-        smoothing: root.Tokens.rounding.medium
-        color: root.blobColour
+    function close() {
+        isOpen = false;
     }
 
-    BlobInvertedRect {
+    IpcHandler {
+        target: "nexus"
+        function toggle() {
+            root.toggle();
+        }
+    }
+
+    // Dismiss on backdrop click
+    MouseArea {
         anchors.fill: parent
-        group: blobGroup
-        opacity: root.blobColour.a
-        radius: Tokens.rounding.large
-
-        borderLeft: navPane.width + navPane.anchors.margins * 2
-        borderRight: Tokens.padding.medium
-        borderTop: Tokens.padding.medium
-        borderBottom: Tokens.padding.medium
+        onClicked: root.close()
     }
 
-    BlobRect {
-        id: windowBtnRect
-
-        anchors.right: parent.right
+    // Slide-in drawer on top-right
+    Rectangle {
+        id: panel
+        width: 380
+        height: Math.min(parent.height - 32, 640)
         anchors.top: parent.top
-        anchors.margins: root.nState.isWindow ? 0 : Tokens.padding.extraSmall
+        anchors.topMargin: 16
+        anchors.right: parent.right
+        anchors.rightMargin: 16
+        radius: 18
+        color: "#16161f"
+        border.color: "#28283a"
+        border.width: 1
 
-        group: blobGroup
-        opacity: root.blobColour.a
-        radius: Tokens.rounding.medium
-
-        implicitWidth: windowBtn.implicitWidth + (root.nState.isWindow ? Tokens.padding.extraSmall : Tokens.padding.small) * 2
-        implicitHeight: windowBtn.implicitHeight + (root.nState.isWindow ? Tokens.padding.extraSmall : Tokens.padding.small)
-    }
-
-    IconButton {
-        id: windowBtn
-
-        anchors.centerIn: windowBtnRect
-        icon: nState.isWindow ? "close" : "pip"
-        type: IconButton.Text
-        label.fill: 0
-        inactiveOnColour: hovered ? nState.isWindow ? Colours.palette.m3error : Colours.palette.m3primary : Colours.palette.m3onSurfaceVariant
-        stateLayer.opacity: 0
-        onClicked: {
-            if (!nState.isWindow)
-                WindowFactory.create();
-            root.close();
+        MouseArea {
+            anchors.fill: parent
+            // Absorb clicks inside
         }
 
-        label.scale: pressed ? 0.8 : 1
-        label.renderType: Text.QtRendering
+        ColumnLayout {
+            anchors.fill: parent
+            anchors.margins: 18
+            spacing: 16
 
-        Behavior on label.scale {
-            Anim {}
+            // Header
+            RowLayout {
+                Layout.fillWidth: true
+
+                Text {
+                    text: "Control Center"
+                    font.pixelSize: 16
+                    font.bold: true
+                    color: Theme.text
+                }
+
+                Item { Layout.fillWidth: true }
+
+                Rectangle {
+                    width: 28
+                    height: 28
+                    radius: 14
+                    color: closeArea.containsMouse ? "#2e2e42" : "#222230"
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: "✕"
+                        color: Theme.dim
+                        font.pixelSize: 12
+                    }
+
+                    MouseArea {
+                        id: closeArea
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        onClicked: root.close()
+                    }
+                }
+            }
+
+            // Quick Toggles Grid
+            GridLayout {
+                Layout.fillWidth: true
+                columns: 2
+                columnSpacing: 10
+                rowSpacing: 10
+
+                // Wi-Fi Toggle
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 52
+                    radius: 12
+                    color: Network.enabled ? "#1f3838" : "#20202c"
+                    border.color: Network.enabled ? Theme.teal : "#2b2b3c"
+                    border.width: 1
+
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.margins: 10
+                        spacing: 10
+
+                        Text {
+                            text: Network.connected ? "󰖩" : "󰖪"
+                            font.pixelSize: 18
+                            color: Network.enabled ? Theme.amber : Theme.dim
+                        }
+
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: 1
+
+                            Text {
+                                text: "Wi-Fi"
+                                font.pixelSize: 12
+                                font.bold: true
+                                color: Theme.text
+                            }
+
+                            Text {
+                                text: Network.connected ? Network.activeSsid : (Network.enabled ? "Disconnected" : "Off")
+                                font.pixelSize: 10
+                                color: Theme.dim
+                                elide: Text.ElideRight
+                                Layout.fillWidth: true
+                            }
+                        }
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: Network.toggleWifi()
+                    }
+                }
+
+                // Bluetooth Toggle
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 52
+                    radius: 12
+                    color: Bluetooth.enabled ? "#252b3d" : "#20202c"
+                    border.color: Bluetooth.enabled ? "#4d79ff" : "#2b2b3c"
+                    border.width: 1
+
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.margins: 10
+                        spacing: 10
+
+                        Text {
+                            text: Bluetooth.enabled ? "󰂯" : "󰂲"
+                            font.pixelSize: 18
+                            color: Bluetooth.enabled ? "#6699ff" : Theme.dim
+                        }
+
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: 1
+
+                            Text {
+                                text: "Bluetooth"
+                                font.pixelSize: 12
+                                font.bold: true
+                                color: Theme.text
+                            }
+
+                            Text {
+                                text: Bluetooth.enabled ? (Bluetooth.connectedDevices.length > 0 ? Bluetooth.connectedDevices[0].name : "On") : "Off"
+                                font.pixelSize: 10
+                                color: Theme.dim
+                                elide: Text.ElideRight
+                                Layout.fillWidth: true
+                            }
+                        }
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: Bluetooth.togglePower()
+                    }
+                }
+            }
+
+            // Sliders Section
+            ColumnLayout {
+                Layout.fillWidth: true
+                spacing: 12
+
+                // Volume
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: 4
+
+                    RowLayout {
+                        Layout.fillWidth: true
+                        Text {
+                            text: Audio.muted ? "󰝟 Muted" : "󰕾 Volume"
+                            font.pixelSize: 12
+                            color: Theme.dim
+                        }
+                        Item { Layout.fillWidth: true }
+                        Text {
+                            text: Math.round(Audio.volume * 100) + "%"
+                            font.pixelSize: 12
+                            font.bold: true
+                            color: Theme.text
+                        }
+                    }
+
+                    Slider {
+                        id: volumeSlider
+                        Layout.fillWidth: true
+                        from: 0.0
+                        to: 1.0
+                        value: Audio.volume
+                        onMoved: Audio.setVolume(value)
+                    }
+                }
+
+                // Brightness
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: 4
+
+                    RowLayout {
+                        Layout.fillWidth: true
+                        Text {
+                            text: "󰃠 Brightness"
+                            font.pixelSize: 12
+                            color: Theme.dim
+                        }
+                        Item { Layout.fillWidth: true }
+                        Text {
+                            text: Math.round(Brightness.value * 100) + "%"
+                            font.pixelSize: 12
+                            font.bold: true
+                            color: Theme.text
+                        }
+                    }
+
+                    Slider {
+                        id: brightnessSlider
+                        Layout.fillWidth: true
+                        from: 0.01
+                        to: 1.0
+                        value: Brightness.value
+                        onMoved: Brightness.setBrightness(value)
+                    }
+                }
+            }
+
+            // Notifications Section
+            RowLayout {
+                Layout.fillWidth: true
+                Layout.topMargin: 4
+
+                Text {
+                    text: "Notifications (" + Notifications.unreadCount + ")"
+                    font.pixelSize: 13
+                    font.bold: true
+                    color: Theme.text
+                }
+
+                Item { Layout.fillWidth: true }
+
+                Text {
+                    text: "Clear All"
+                    font.pixelSize: 11
+                    color: Theme.amber
+                    visible: Notifications.unreadCount > 0
+
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: Notifications.clearAll()
+                    }
+                }
+            }
+
+            // Notification List
+            ListView {
+                id: notifList
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                clip: true
+                spacing: 8
+                model: Notifications.notifications
+
+                delegate: Rectangle {
+                    required property var modelData
+                    required property int index
+
+                    width: notifList.width
+                    height: 56
+                    radius: 10
+                    color: "#1c1c27"
+                    border.color: "#28283a"
+                    border.width: 1
+
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.margins: 8
+                        spacing: 10
+
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: 2
+
+                            Text {
+                                text: modelData && modelData.summary ? modelData.summary : "Notification"
+                                font.pixelSize: 12
+                                font.bold: true
+                                color: Theme.text
+                                elide: Text.ElideRight
+                                Layout.fillWidth: true
+                            }
+
+                            Text {
+                                text: modelData && modelData.body ? modelData.body : ""
+                                font.pixelSize: 11
+                                color: Theme.dim
+                                elide: Text.ElideRight
+                                Layout.fillWidth: true
+                            }
+                        }
+
+                        Rectangle {
+                            width: 22
+                            height: 22
+                            radius: 11
+                            color: "#262638"
+
+                            Text {
+                                anchors.centerIn: parent
+                                text: "✕"
+                                font.pixelSize: 9
+                                color: Theme.dim
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: {
+                                    if (modelData) Notifications.dismiss(modelData.id);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
-    }
-
-    NavPane {
-        id: navPane
-
-        anchors.top: parent.top
-        anchors.bottom: parent.bottom
-        anchors.left: parent.left
-        anchors.margins: Tokens.padding.large
-
-        nState: nState
-        width: Math.min(Tokens.sizes.nexus.maxNavWidth, Math.round(root.width / 3))
-    }
-
-    Pages {
-        anchors.left: navPane.right
-        anchors.right: parent.right
-        anchors.top: parent.top
-        anchors.bottom: parent.bottom
-        anchors.leftMargin: navPane.anchors.margins + anchors.margins
-        anchors.margins: Tokens.padding.extraLarge
-
-        nState: nState
     }
 }

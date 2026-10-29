@@ -5,6 +5,12 @@ import "modules/island"
 import "modules/left_panel"
 import "modules/veils"
 import "modules/background"
+import "modules/launcher"
+import "modules/nexus"
+import "modules/osd"
+import "modules/lock"
+import "modules/session"
+import "modules/notifications"
 
 ShellRoot {
     id: root
@@ -20,4 +26,12 @@ ShellRoot {
 
     // Instantiate Full-Screen Wallpaper Surface (Backdrop layer)
     WallpaperSurface {}
+
+    // System Overlays & Services
+    Launcher {}
+    Nexus {}
+    OSD {}
+    LockScreen {}
+    SessionMenu {}
+    NotificationToasts {}
 }

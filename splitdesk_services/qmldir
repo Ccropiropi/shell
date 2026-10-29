@@ -2,4 +2,8 @@ module splitdesk.services
 singleton Niri 1.0 Niri.qml
 singleton Theme 1.0 Theme.qml
 singleton Audio 1.0 Audio.qml
+singleton Brightness 1.0 Brightness.qml
+singleton Network 1.0 Network.qml
+singleton Bluetooth 1.0 Bluetooth.qml
+singleton Notifications 1.0 Notifications.qml
 singleton Players 1.0 Players.qml
