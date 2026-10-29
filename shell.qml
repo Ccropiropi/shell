@@ -11,6 +11,7 @@ import "modules/areapicker"
 import "modules/lock"
 import "modules/island"
 import "modules/left_panel"
+import "modules/veils"
 import QtQuick
 import Quickshell
 import qs.services
@@ -31,6 +32,7 @@ ShellRoot {
 
     IslandBar {}
     LeftPanel {}
+    FocusVeils {}
     Background {}
     Drawers {}
     AreaPicker {}
