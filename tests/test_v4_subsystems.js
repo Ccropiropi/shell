@@ -44,6 +44,7 @@ assert.ok(cliphistSrc.includes('command: ["/usr/sbin/cliphist", "list"]'), 'Clip
 assert.ok(cliphistSrc.includes('maxEntries: 200'), 'Cliphist must cap maxEntries at 200 (Advisory R1)');
 assert.ok(cliphistSrc.includes('SplitParser'), 'Cliphist must stream parse lines with SplitParser');
 assert.ok(cliphistSrc.includes('parseInt'), 'Cliphist must validate numeric ID before decoding (Finding C2)');
+assert.ok(cliphistSrc.includes('/^\\d+$/') || cliphistSrc.includes('/^\\d+$/.test'), 'Cliphist must strictly validate numeric ID via regex (Finding C2)');
 assert.ok(cliphistSrc.includes('--type image/png'), 'Cliphist image decoding must pass --type image/png (Finding C2)');
 assert.ok(cliphistSrc.includes('"wipe"'), 'Cliphist must implement wipe in clearAll');
 
@@ -221,27 +222,27 @@ assert.ok(regionSrc.includes('tesseract stdin stdout -l eng'), 'RegionSelector O
 // Verify Mathematical Soundness of Slant Geometry Presets (Section 3.3 & Gate 3)
 function computeSlantPresets(sw, sh) {
     const leftW = Math.round(sw * 0.46);
+    const rightX = Math.round(sw * 0.34); // covers slanted bottom-left extreme (Finding C5)
     const leftPreset = { x: 0, y: 0, w: leftW, h: sh };
-    const rightPreset = { x: leftW, y: 0, w: sw - leftW, h: sh };
+    const rightPreset = { x: rightX, y: 0, w: sw - rightX, h: sh };
     const fullPreset = { x: 0, y: 0, w: sw, h: sh };
     return { left: leftPreset, right: rightPreset, full: fullPreset };
 }
 
 const testResolutions = [
-    { name: "1080p FHD", sw: 1920, sh: 1080, expectedLeftW: 883, expectedRightW: 1037 },
-    { name: "1440p QHD", sw: 2560, sh: 1440, expectedLeftW: 1178, expectedRightW: 1382 },
-    { name: "4K UHD", sw: 3840, sh: 2160, expectedLeftW: 1766, expectedRightW: 2074 }
+    { name: "1080p FHD", sw: 1920, sh: 1080, expectedLeftW: 883, expectedRightX: 653, expectedRightW: 1267 },
+    { name: "1440p QHD", sw: 2560, sh: 1440, expectedLeftW: 1178, expectedRightX: 870, expectedRightW: 1690 },
+    { name: "4K UHD", sw: 3840, sh: 2160, expectedLeftW: 1766, expectedRightX: 1306, expectedRightW: 2534 }
 ];
 
 for (const res of testResolutions) {
     const p = computeSlantPresets(res.sw, res.sh);
     assert.strictEqual(p.left.w, res.expectedLeftW, `${res.name} Left region width mismatch`);
+    assert.strictEqual(p.right.x, res.expectedRightX, `${res.name} Right region X mismatch (Finding C5)`);
     assert.strictEqual(p.right.w, res.expectedRightW, `${res.name} Right region width mismatch`);
-    assert.strictEqual(p.right.x, res.expectedLeftW, `${res.name} Right region X must match Left region W`);
-    assert.strictEqual(p.left.w + p.right.w, res.sw, `${res.name} Sum of Left and Right must exactly equal Screen Width (0px gap/overlap)`);
     assert.strictEqual(p.full.w, res.sw, `${res.name} Fullscreen width must match`);
     assert.strictEqual(p.full.h, res.sh, `${res.name} Fullscreen height must match`);
-    console.log(`PASS: Resolution ${res.name} Slant preset math verified: Left=${p.left.w}px, Right=${p.right.w}px, Total=${res.sw}px (0px gap)`);
+    console.log(`PASS: Resolution ${res.name} Slant preset math verified: Left=${p.left.w}px, RightX=${p.right.x}px, RightW=${p.right.w}px (C5 Slant-compliant)`);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════

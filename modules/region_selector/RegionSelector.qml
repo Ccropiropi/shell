@@ -80,10 +80,10 @@ PanelWindow {
             selW = Math.round(sw * 0.46);
             selH = sh;
         } else if (name === "right") {
-            const leftW = Math.round(sw * 0.46);
-            selX = leftW;
+            const rightX = Math.round(sw * 0.34);   // round(W*(w-s)) covers slanted bottom-left extreme
+            selX = rightX;
             selY = 0;
-            selW = sw - leftW;
+            selW = sw - rightX;
             selH = sh;
         } else if (name === "fullscreen") {
             selX = 0;

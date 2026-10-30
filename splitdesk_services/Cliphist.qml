@@ -87,6 +87,10 @@ Singleton {
     }
 
     function copy(id, isImage) {
+        if (!/^\d+$/.test(String(id).trim())) {
+            console.error("[Cliphist] Invalid numeric ID rejected:", id);
+            return;
+        }
         const numericId = parseInt(id, 10);
         if (isNaN(numericId) || numericId < 0) {
             console.error("[Cliphist] Invalid numeric ID rejected:", id);
