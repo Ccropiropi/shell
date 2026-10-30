@@ -142,9 +142,9 @@ console.log("PASS: NotificationToasts Overlay and dismiss verified.");
 
 // 9. Root Shell Mounting (shell.qml)
 const rootShellSrc = fs.readFileSync(path.join(shellDir, 'shell.qml'), 'utf8');
-for (const mod of ['IslandBar', 'LeftPanel', 'FocusVeils', 'WallpaperSurface', 'Launcher', 'Nexus', 'OSD', 'LockScreen', 'SessionMenu', 'NotificationToasts']) {
+for (const mod of ['IslandBar', 'LeftPanel', 'FocusVeils', 'WallpaperSurface', 'Launcher', 'Nexus', 'OSD', 'LockScreen', 'SessionMenu', 'NotificationToasts', 'Cheatsheet', 'ClipboardPanel', 'RegionSelector']) {
     assert.ok(rootShellSrc.includes(`${mod} {}`), `shell.qml must mount ${mod}`);
 }
-console.log("PASS: All 10 modular services and overlays mounted in shell.qml.");
+console.log("PASS: All 13 modular services and overlays mounted in shell.qml.");
 
 console.log("=== ALL MILESTONE L3 UI MODULES CHECKS PASSED ===");

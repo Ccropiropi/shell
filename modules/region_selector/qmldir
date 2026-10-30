@@ -1,0 +1,2 @@
+module modules.region_selector
+RegionSelector 1.0 RegionSelector.qml

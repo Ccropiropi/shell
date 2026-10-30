@@ -16,6 +16,7 @@ const requiredServices = [
     'Bluetooth.qml',
     'Notifications.qml',
     'Players.qml',
+    'Cliphist.qml',
     'Theme.qml',
     'Niri.qml',
     'qmldir'
@@ -114,7 +115,7 @@ console.log("PASS: Players service MPRIS integration verified.");
 
 // 8. qmldir exports
 const qmldirContent = fs.readFileSync(path.join(servicesDir, 'qmldir'), 'utf8');
-for (const s of ['Audio', 'Brightness', 'Network', 'Bluetooth', 'Notifications', 'Players', 'Niri', 'Theme']) {
+for (const s of ['Audio', 'Brightness', 'Network', 'Bluetooth', 'Notifications', 'Players', 'Niri', 'Theme', 'Cliphist']) {
     assert.ok(qmldirContent.includes(`singleton ${s}`), `qmldir must register singleton ${s}`);
 }
 console.log("PASS: qmldir module singletons verified.");

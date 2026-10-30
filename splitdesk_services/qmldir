@@ -7,3 +7,4 @@ singleton Network 1.0 Network.qml
 singleton Bluetooth 1.0 Bluetooth.qml
 singleton Notifications 1.0 Notifications.qml
 singleton Players 1.0 Players.qml
+singleton Cliphist 1.0 Cliphist.qml

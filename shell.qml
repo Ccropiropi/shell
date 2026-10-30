@@ -11,6 +11,9 @@ import "modules/osd"
 import "modules/lock"
 import "modules/session"
 import "modules/notifications"
+import "modules/cheatsheet"
+import "modules/clipboard"
+import "modules/region_selector"
 
 ShellRoot {
     id: root
@@ -34,4 +37,9 @@ ShellRoot {
     LockScreen {}
     SessionMenu {}
     NotificationToasts {}
+
+    // Milestone V4 Advanced Subsystems
+    Cheatsheet {}
+    ClipboardPanel {}
+    RegionSelector {}
 }
